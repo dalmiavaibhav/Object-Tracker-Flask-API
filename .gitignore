@@ -1,0 +1,8 @@
+/static/*
+/__pycache__/
+/ObjectDetection/MobileNetSSD_deploy.caffemodel
+/ObjectDetection/yolov3.weights
+/movable/*
+/extra/*
+goturn.caffemodel
+goturn.prototxt

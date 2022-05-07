@@ -1,0 +1,82 @@
+{% extends "layout.html" %}
+
+{% block body %}
+  <h1>Object Tracking Demonstration</h1>
+  <div>
+    <div>
+        <label>Choose an Input Source:</label>
+        <select id="vs">
+          <option value="None">None</option>
+          <option value="webcam">Webcam</option>
+          <option value="video2.mp4">Video2.mp4</option>
+          <option value="motor_bike.mp4">Motor_bike.Mp4</option>
+
+          <option value="uav0000024_00000_s.mp4">uav0000024_00000_s.mp4</option>
+          <option value="uav0000029_01102_s.mp4">uav0000029_01102_s.mp4</option>
+          <option value="uav0000053_00264_s.mp4">uav0000053_00264_s.mp4</option>
+          <option value="uav0000054_00000_s.mp4">uav0000054_00000_s.mp4</option>
+          <option value="uav0000086_00870_s.mp4">uav0000086_00870_s.mp4</option>
+          <option value="uav0000092_00575_s.mp4">uav0000092_00575_s.mp4</option>
+          <option value="uav0000092_01150_s.mp4">uav0000092_01150_s.mp4</option>
+          <option value="uav0000115_00606_s.mp4">uav0000115_00606_s.mp4</option>
+          <option value="uav0000245_00001_s.mp4">uav0000245_00001_s.mp4</option>
+          <option value="uav0000317_00000_s.mp4">uav0000317_00000_s.mp4</option>
+          <option value="uav0000317_02945_s.mp4">uav0000317_02945_s.mp4</option>
+          <option value="Bad_video_for testing_track.mp4">Bad_video_for testing_track.mp4</option>
+          <option value="Day_Camera_Slight_Zoom.h264">Day_Camera_Slight_Zoom.h264</option>
+          <option value="Day_Person_walking.mp4">Day_Person_walking.mp4</option>
+          <option value="Full_zoom_with_extreme_shake.mp4">Full_zoom_with_extreme_shake.mp4</option>
+          <option value="Multiple_humans_with_shake.mp4">Multiple_humans_with_shake.mp4</option>
+          <option value="Thermal_Camera.h264">Thermal_Camera.h264</option>
+
+        </select>
+        <input type="button" id="create_vs" value="Load">
+        <!-- <input type="button" id='del_vs' value="Delete"> -->
+        <p id="vs_status"></p>
+    </div>
+    <br>
+    <hr>
+    <div>
+      <label>Choose a Tracker</label>
+      <select id="tracker" onchange="onchange_tracker()">
+        <!-- <option value="DEEPSORT">DEEPSORT</option> -->
+        <option value="None">None</option>
+        <option value="SORT">SORT</option>
+        <option value="SIAMFC">SIAMFC</option>
+        <option value="Goturn">GOTURN</option>
+        <option value="DLIB">DLIB</option>
+        <option value="CSRT">CSRT</option>
+        <option value="MIL">MIL</option>
+        <option value="TLD">TLD</option>
+        <option value="KCF">KCF</option>
+        <option value="BOOSTING">BOOSTING</option>
+        <option value="MOSSE">MOSSE</option>
+        <option value="MEDIANFLOW">MEDIANFLOW</option>
+      </select>
+      <input type="button" id="load_tracker" value="Load">
+     
+        
+      <label style="margin-left: 25px">If Tracker is in ('SORT') Choose an Object Detector:</label>
+      <select id="model">
+        <option value="None">None</option>
+        <option value="MobileNetSSD">MobileNetSSD</option>
+        <option value="Yolo">Yolo</option>
+      </select>
+      <input type="button" id="load_model" value="Load">
+      <p id="tracker_status"></p>
+      <p id="model_status"></p>
+    
+    </div>
+    
+    <br>
+    <hr>
+    <button id='start' type="button">Start Tracking</button>
+    <button id='stop' type="button">Eval/Reset</button>
+    <br>
+    <hr>
+    <div id='streamer'></div>
+    <div id ='success_plot'></div>
+    <div id ='precision_plot'></div>      
+  </div>
+  
+{% endblock %}

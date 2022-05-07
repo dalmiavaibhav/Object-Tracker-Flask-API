@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo</title>
+    <script type="text/javascript"
+    src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js">
+    </script>
+    <script src='https://cdn.plot.ly/plotly-2.4.2.min.js'></script>
+</head>
+<body>
+    {% block body %}{% endblock %}
+</body>
+<script>
+    var socket = io.connect('http://' + document.domain + ':' + location.port, {
+        reconnection: false
+        });
+    const vs = document.getElementById('vs')
+    const create_vs = document.getElementById('create_vs');
+    const del_vs = document.getElementById('del_vs');
+    const vs_status = document.getElementById('vs_status');
+    
+    const SOT = ['SIAMFC', 'Goturn', 'DLIB', 'CSRT', 'MIL', 'BOOSTING', 'MOSSE', 'KCF', 'TLD', 'MEDIANFLOW'];
+    const MOT = ['SORT', 'DEEPSORT'];
+
+    const tracker = document.getElementById('tracker')
+    const setBox = document.getElementById('setBox');
+    const deletetBox = document.getElementById('deleteBox');
+    const load_tracker = document.getElementById('load_tracker');
+    const tracker_status = document.getElementById('tracker_status');
+    
+    const model = document.getElementById('model');
+    const load_model = document.getElementById('load_model');
+    const model_status = document.getElementById('model_status');
+    const streamer = document.getElementById('streamer');
+    const start = document.getElementById('start');
+    const stop = document.getElementById('stop');
+    
+    // Canvas 
+    var c = document.createElement('canvas');
+    c.id = 'canvas';
+    var ctx = c.getContext("2d");
+    var img = document.createElement('img');
+    
+    var x1, y1, w, h;
+    box_started = false;
+    
+    
+    function onchange_tracker(){
+        try{
+            Plotly.purge('success_plot');
+            Plotly.purge('precision_plot');
+        }
+        catch{
+            console.log('Plots already deleted');
+        }
+
+        console.log(tracker.value);
+        if(SOT.includes(tracker.value)){ 
+            streamer.appendChild(c);
+            socket.emit('init_tracker');
+            tracker_status.innerHTML = 'Select a bounding box!';
+        }
+        else if(MOT.includes(tracker.value)){
+            tracker_status.innerHTML = '';
+            try {
+                streamer.removeChild(c);
+            }
+            catch(e){
+                console.log('Canvas already removed');
+            }
+            console.log('Child Removed.')
+        }
+    }
+
+    create_vs.addEventListener('click', function(e){
+        vs_status.innerHTML = 'Video Loaded.';
+        socket.emit('create_vs', vs.value);
+        console.log('Video Source Created');
+    });
+
+   /*  del_vs.addEventListener('click', function(e){
+        socket.emit('delete_vs');
+        vs_status.innerHTML = 'Video Deleted.'
+        console.log('Video Source Deleted');
+    }); */
+
+    c.addEventListener("click", function(e){
+        if(box_started == false){
+            ctx.drawImage(img, 0, 0);
+            x1 = e.offsetX, y1 = e.offsetY;
+            console.log('Box started');
+            box_started = true;
+        }
+        else{
+            w = e.offsetX - x1;
+            h = e.offsetY - y1;
+            box_started = false;
+            console.log('Box ended');
+            
+        } 
+    });
+
+    c.addEventListener('mousemove', function(e){
+        if(box_started == true){
+            ctx.clearRect(0, 0, c.width, c.height);
+            ctx.drawImage(img, 0, 0);
+            ctx.beginPath();
+            w = e.offsetX - x1;
+            h = e.offsetY - y1;
+            ctx.rect(x1, y1, w, h);
+            ctx.stroke();
+        }
+    });
+
+    load_model.addEventListener('click', function(e){
+        socket.emit('det', model.value);
+        model_status.innerHTML = 'Model Loaded.'
+        console.log('Model Loaded');
+    });
+
+    load_tracker.addEventListener('click', function(e){
+        if(SOT.includes(tracker.value)){
+            //drawCanvas();
+            const box = [x1, y1, w, h];
+            console.log(tracker.value);
+            socket.emit('trk', tracker.value, box);
+        }
+        else{
+            console.log(tracker.value);
+            socket.emit('trk', tracker.value, [0,0,0,0]);
+        }
+
+        tracker_status.innerHTML = 'Tracker Loaded.'
+        console.log('Tracker Loaded');
+    });
+
+    start.addEventListener('click', function(e){
+        if(SOT.includes(tracker.value)){
+            streamer.removeChild(c);
+        }
+        streamer.appendChild(img);
+        socket.emit('start');
+        vs_status.innerHTML = '';
+        model_status.innerHTML = '';
+        tracker_status.innerHTML = '';
+    });
+
+    stop.addEventListener('click', function(e){
+        socket.emit('stop');
+        img.src = ''
+        vs.value = 'None';
+        tracker.value = 'None';
+        model.value = 'None';
+        try{
+            streamer.removeChild(img);
+        }
+        catch{
+            console.log('No child to remove');
+        }
+        
+    });
+    
+    socket.on('init_frame', function(msg){
+        c.width = msg.size[1];
+        c.height = msg.size[0];
+        img.src = msg.image;
+        img.onload = function(){
+            ctx.drawImage(img, 0, 0);
+        };
+    })
+
+    socket.on('vs', function(url){
+        img.src = url;
+        if(url == ''){
+            console.log('Tracking Stopped')
+        }
+        else{
+            console.log('Tracking Started')
+        }
+    });
+
+    socket.on('plot_graphs', function(success){
+        console.log(success);
+        x1= JSON.parse(success['x'][0]);
+        y1 = JSON.parse(success['y'][0]);
+        var trace1 = {
+            x: x1,
+            y: y1,
+            type: 'scatter'
+        };
+        var layout1 = { 
+            width: 500,
+            height: 500,
+            title:'OPE - IoU Overlap',
+            xaxis: {
+                title: 'IoU threshold'
+            },
+            yaxis: {
+                title: 'Success Rate'
+            }        
+        };
+        var success_plot = [trace1];
+        Plotly.newPlot('success_plot', success_plot, layout1);
+        
+        x2 = JSON.parse(success['x'][1]);
+        y2 = JSON.parse(success['y'][1]);
+        var trace2 = {
+            x: x2,
+            y: y2,
+            type: 'scatter'
+        }; 
+        var layout2 = { 
+            width: 500,
+            height: 500,
+            title:'OPE - Precision',
+            xaxis: {
+                title: 'Location threshold'
+            },
+            yaxis: {
+                title: 'Success Rate'
+            }        
+        };
+        var precision_plot = [trace2];
+        Plotly.newPlot('precision_plot', precision_plot, layout2);
+
+    });
+
+    
+    
+</script> 
+</html>
